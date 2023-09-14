@@ -1,5 +1,5 @@
 /*!
-*  ui-leaflet 2.0.0 2018-01-05
+*  ui-leaflet 2.0.0 2023-09-14
 *  ui-leaflet - An AngularJS directive to easily interact with Leaflet maps
 *  git: https://github.com/angular-ui/ui-leaflet
 */
@@ -684,7 +684,7 @@ angular.module('ui-leaflet').service('leafletHelpers', function ($q, $log, $time
     var _clone = _copy;
     /*
     For parsing paths to a field in an object
-      Example:
+     Example:
     var obj = {
         bike:{
          1: 'hi'
@@ -693,7 +693,7 @@ angular.module('ui-leaflet').service('leafletHelpers', function ($q, $log, $time
     };
     _getObjectValue(obj,"bike.1") returns 'hi'
     this is getPath in ui-gmap
-      like _.get
+     like _.get
     http://stackoverflow.com/questions/2631001/javascript-test-for-existence-of-nested-object-key?page=1&tab=active#tab-top
      */
     var _getObjectValue = function _getObjectValue(object, path) {
@@ -3774,17 +3774,20 @@ angular.module('ui-leaflet').directive('layers', function (leafletLogger, $q, le
         restrict: "A",
         scope: false,
         replace: false,
-        require: 'leaflet',
-        controller: function controller($scope) {
-            $scope._leafletLayers = $q.defer();
+        require: ['leaflet', 'layers'],
+        controller: function controller() {
+            var __leafletLayers = $q.defer();
+            this._leafletLayers = __leafletLayers;
             this.getLayers = function () {
-                return $scope._leafletLayers.promise;
+                return __leafletLayers.promise;
             };
         },
-        link: function link(scope, element, attrs, controller) {
+        link: function link(scope, element, attrs, controllers) {
             var isDefined = leafletHelpers.isDefined,
                 leafletLayers = {},
-                leafletScope = controller.getLeafletScope(),
+                mapController = controllers[0],
+                leafletScope = mapController.getLeafletScope(),
+                ownController = controllers[1],
                 layers = leafletScope.layers,
                 createLayer = leafletLayerHelpers.createLayer,
                 safeAddLayer = leafletLayerHelpers.safeAddLayer,
@@ -3797,10 +3800,10 @@ angular.module('ui-leaflet').directive('layers', function (leafletLogger, $q, le
                 leafletControlHelpers.destroyMapLayersControl(scope.mapId);
             });
 
-            controller.getMap().then(function (map) {
+            mapController.getMap().then(function (map) {
 
                 // We have baselayers to add to the map
-                scope._leafletLayers.resolve(leafletLayers);
+                ownController._leafletLayers.resolve(leafletLayers);
                 leafletData.setLayers(leafletLayers, attrs.id);
 
                 leafletLayers.baselayers = {};
@@ -4749,7 +4752,7 @@ angular.module('ui-leaflet').factory('leafletEventsHelpersFactory', function ($r
      }
      //would yield name of
      name = "m1"
-       If nested:
+      If nested:
      markerModel : {
      cars: {
      m1: { lat:_, lon: _}
@@ -4925,36 +4928,36 @@ angular.module('ui-leaflet').factory('leafletGeoJsonEvents', function ($rootScop
 'use strict';
 
 angular.module('ui-leaflet').factory('leafletLabelEvents', function ($rootScope, $q, leafletLogger, leafletHelpers, leafletEventsHelpersFactory) {
-        var Helpers = leafletHelpers,
-            EventsHelper = leafletEventsHelpersFactory;
-        //$log = leafletLogger;
+    var Helpers = leafletHelpers,
+        EventsHelper = leafletEventsHelpersFactory;
+    //$log = leafletLogger;
 
-        var LabelEvents = function LabelEvents() {
-                EventsHelper.call(this, 'leafletDirectiveLabel', 'markers');
-        };
-        LabelEvents.prototype = new EventsHelper();
+    var LabelEvents = function LabelEvents() {
+        EventsHelper.call(this, 'leafletDirectiveLabel', 'markers');
+    };
+    LabelEvents.prototype = new EventsHelper();
 
-        LabelEvents.prototype.genDispatchEvent = function (maybeMapId, eventName, logic, leafletScope, lObject, name, model, layerName) {
-                var markerName = name.replace('markers.', '');
-                return EventsHelper.prototype.genDispatchEvent.call(this, maybeMapId, eventName, logic, leafletScope, lObject, markerName, model, layerName);
-        };
+    LabelEvents.prototype.genDispatchEvent = function (maybeMapId, eventName, logic, leafletScope, lObject, name, model, layerName) {
+        var markerName = name.replace('markers.', '');
+        return EventsHelper.prototype.genDispatchEvent.call(this, maybeMapId, eventName, logic, leafletScope, lObject, markerName, model, layerName);
+    };
 
-        LabelEvents.prototype.getAvailableEvents = function () {
-                return ['click', 'dblclick', 'mousedown', 'mouseover', 'mouseout', 'contextmenu'];
-        };
+    LabelEvents.prototype.getAvailableEvents = function () {
+        return ['click', 'dblclick', 'mousedown', 'mouseover', 'mouseout', 'contextmenu'];
+    };
 
-        LabelEvents.prototype.genEvents = function (maybeMapId, eventName, logic, leafletScope, lObject, name, model, layerName) {
-                var _this = this;
-                var labelEvents = this.getAvailableEvents();
-                var scopeWatchName = Helpers.getObjectArrayPath("markers." + name);
-                labelEvents.forEach(function (eventName) {
-                        lObject.label.on(eventName, _this.genDispatchEvent(maybeMapId, eventName, logic, leafletScope, lObject.label, scopeWatchName, model, layerName));
-                });
-        };
+    LabelEvents.prototype.genEvents = function (maybeMapId, eventName, logic, leafletScope, lObject, name, model, layerName) {
+        var _this = this;
+        var labelEvents = this.getAvailableEvents();
+        var scopeWatchName = Helpers.getObjectArrayPath("markers." + name);
+        labelEvents.forEach(function (eventName) {
+            lObject.label.on(eventName, _this.genDispatchEvent(maybeMapId, eventName, logic, leafletScope, lObject.label, scopeWatchName, model, layerName));
+        });
+    };
 
-        LabelEvents.prototype.bindEvents = function (maybeMapId, lObject, name, model, leafletScope, layerName) {};
+    LabelEvents.prototype.bindEvents = function (maybeMapId, lObject, name, model, leafletScope, layerName) {};
 
-        return new LabelEvents();
+    return new LabelEvents();
 });
 
 'use strict';

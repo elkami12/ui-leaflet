@@ -4,17 +4,20 @@ angular.module('ui-leaflet').directive('layers', function (leafletLogger, $q, le
         restrict: "A",
         scope: false,
         replace: false,
-        require: 'leaflet',
-        controller: function ($scope) {
-            $scope._leafletLayers = $q.defer();
+        require: ['leaflet', 'layers'],
+        controller: function () {
+		    var __leafletLayers = $q.defer();
+            this._leafletLayers = __leafletLayers;
             this.getLayers = function () {
-                return $scope._leafletLayers.promise;
+                return __leafletLayers.promise;
             };
         },
-        link: function(scope, element, attrs, controller){
+        link: function(scope, element, attrs, controllers){
             var isDefined = leafletHelpers.isDefined,
                 leafletLayers = {},
-                leafletScope  = controller.getLeafletScope(),
+                mapController = controllers[0],
+                leafletScope = mapController.getLeafletScope(),
+                ownController = controllers[1],
                 layers = leafletScope.layers,
                 createLayer = leafletLayerHelpers.createLayer,
                 safeAddLayer = leafletLayerHelpers.safeAddLayer,
@@ -27,10 +30,10 @@ angular.module('ui-leaflet').directive('layers', function (leafletLogger, $q, le
                 leafletControlHelpers.destroyMapLayersControl(scope.mapId);
             });
 
-            controller.getMap().then(function(map) {
+            mapController.getMap().then(function(map) {
 
                 // We have baselayers to add to the map
-                scope._leafletLayers.resolve(leafletLayers);
+                ownController._leafletLayers.resolve(leafletLayers);
                 leafletData.setLayers(leafletLayers, attrs.id);
 
                 leafletLayers.baselayers = {};
